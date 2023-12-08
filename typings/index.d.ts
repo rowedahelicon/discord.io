@@ -7,8 +7,77 @@ declare type userStatus = "online" | "idle" | "offline";
 
 declare type callbackFunc = (error: cbError, response: any) => void;
 
-declare type WebSocketEvent = {
-  d: any;
+declare type WebSocketEventReady = {
+  v: number;
+  user_settings: any;
+  user: Discord.User,
+  session_id: string;
+  relationships: any[];
+  private_channels: any[];
+  presences: any[];
+  guilds: {
+    unavailable: boolean;
+    id: string;
+  }[];
+  application: {
+    id: string;
+    flags: number;
+  };
+  _trace: string[];
+};
+
+declare type WebSocketEventMessage = {
+  type: number;
+  tts: boolean;
+  timestamp: string;
+  pinned: boolean;
+  nonce: string;
+  mentions: {
+    username: string;
+    member: Discord.Member;
+    id: string;
+    discriminator: string;
+    bot?: boolean;
+    avatar?: string;
+  }[];
+  mention_roles: string[];
+  mention_everyone: boolean;
+  member: Discord.Member;
+  id: string;
+  flags: number;
+  embeds: embedMessageOpts[];
+  edited_timestamp?: any;
+  content: string;
+  channel_id: string;
+  author: Discord.User;
+  attachments: {
+    width: number;
+    height: number;
+    size: number;
+    id: string;
+    filename: string;
+    url: string;
+    proxy_url: string;
+  }[];
+  guild_id: string;
+};
+
+declare type WebSocketEventPresence = {
+  user: Discord.User;
+  status: userStatus;
+  roles: string[];
+  guild_id: string;
+  game?: game;
+  client_status: {
+    web?: userStatus;
+    desktop?: userStatus;
+    mobile?: userStatus;
+  };
+  activities: game[];
+};
+
+declare type WebSocketEvent<EventType=any> = {
+  d: EventType;
   op: number;
   s: number;
   t: string;
@@ -18,6 +87,9 @@ declare type game = {
   name: string;
   type: number;
   url?: string;
+  created_at?: number;
+  id?: string;
+  state?: string;
 };
 
 declare type colors = "DEFAULT" | "AQUA" | "GREEN" | "BLUE" | "PURPLE" | "GOLD" | "ORANGE" | "RED" | "GREY" | "DARKER_GREY" | "NAVY" | "DARK_AQUA" | "DARK_GREEN" | "DARK_BLUE" | "DARK_PURPLE" | "DARK_GOLD" | "DARK_ORANGE" | "DARK_RED" | "DARK_GREY" | "LIGHT_GREY" | "DARK_NAVY";
@@ -28,9 +100,9 @@ declare type channelType = "voice" | "text";
 /**
  * Events callbacks
  */
-declare type readyCallback = (event: WebSocketEvent) => void;
-declare type messageCallback = (user: string, userID: string, channelID: string, mesage: string, event: WebSocketEvent) => void;
-declare type presenceCallback = (user: string, userID: string, status: string, game: game, event: WebSocketEvent) => void;
+declare type readyCallback = (event: WebSocketEvent<WebSocketEventReady>) => void;
+declare type messageCallback = (user: string, userID: string, channelID: string, message: string, event: WebSocketEvent<WebSocketEventMessage>) => void;
+declare type presenceCallback = (user: string, userID: string, status: string, game: game, event: WebSocketEvent<WebSocketEventPresence>) => void;
 declare type anyCallback = (event: WebSocketEvent) => void;
 declare type disconnectCallback = (errMsg: string, code: number) => void;
 
@@ -120,14 +192,14 @@ declare interface permissions {
  */
 declare type sendMessageOpts = {
   to: string,
-  message?: string,
+  message: string,
   tts?: boolean,
   nonce?: string,
-  typing?: boolean,
-  embed?: embedMessageOpts
+  typing?: boolean
 }
 
 declare type embedMessageOpts = {
+  type?: string;
   author?: {
     icon_url?: string,
     name: string,
@@ -135,11 +207,11 @@ declare type embedMessageOpts = {
   },
   color?: number,
   description?: string,
-  fields?: [{
+  fields?: {
     name: string,
     value?: string,
     inline?: boolean
-  }],
+  }[],
   thumbnail?: {
     url: string
   },
@@ -192,6 +264,10 @@ declare type pinMessageOpts = {
   messageID: string
 }
 
+declare type auditLogOpts = {
+  serverID: string
+}
+
 declare type getPinnedMessagesOpts = {
   channelID: string
 }
@@ -232,7 +308,7 @@ declare type setPresenceOpts = {
 declare type addAndRemoveFromRole = {
   serverID: string,
   userID: string,
-  role: string
+  roleID: string
 }
 
 declare type moveUserToOpts = {
@@ -242,13 +318,13 @@ declare type moveUserToOpts = {
 }
 
 declare type actionsOnUserOpts = {
-  channelID: string,
-  target: string
+  serverID: string,
+  userID: string,
 }
 
 declare type banUserOpts = {
-  channelID: string,
-  target: string,
+  serverID: string,
+  userID: string,
   lastDays?: number
 }
 
@@ -288,7 +364,7 @@ declare type editRoleOpts = {
 
 declare type deleteRoleOpts = {
   serverID: string,
-  role: string
+  roleID: string
 }
 
 declare type editNicknameOpts = {
@@ -313,27 +389,27 @@ declare type editServerWidgetOpts = {
 }
 
 declare type addServerEmojiOpts = {
-    serverID: string,
-    name: string,
-    image: string
+  serverID: string,
+  name: string,
+  image: string
 }
 
 declare type editServerEmojiOpts = {
-    serverID: string,
-    emojiID: string,
-    name: string,
-    role: string[]
+  serverID: string,
+  emojiID: string,
+  name: string,
+  roleID: string[]
 }
 
 declare type deleteServerEmojiOpts = {
-    serverID: string,
-    emojiID: string
+  serverID: string,
+  emojiID: string
 }
 
 declare type deleteChannelPermissionOpts = {
-    channelID: string,
-    userID: string,
-    roleID: string
+  channelID: string,
+  userID: string,
+  roleID: string
 }
 
 declare type editNoteOpts = {
@@ -349,12 +425,6 @@ declare type getMemberOpts = {
 declare type getMembersOpts = {
   limit: number,
   after: string
-}
-
-declare type reactionOpts = {
-  channelID: string,
-  messageID: string,
-  reaction: string
 }
 
 /**
@@ -411,12 +481,14 @@ declare namespace Discord {
   }
 
   export class User extends Resource {
-    username: string;
+    username?: string;
     id: string;
-    discriminator: number;
-    avatar: string;
-    bot: boolean;
-    game: Object;
+    discriminator?: string;
+    avatar?: string;
+    verified?: boolean;
+    mfa_enabled?: boolean;
+    email?: any;
+    bot?: boolean;
   }
 
   export class Member extends Resource {
@@ -427,7 +499,6 @@ declare namespace Discord {
     deaf: boolean;
     status: userStatus;
     voice_channel_id: string;
-    nick: string;
   }
 
   export class Role extends Resource {
@@ -445,7 +516,7 @@ declare namespace Discord {
     id: string;
     username: string;
     email: string;
-    discriminator: number;
+    discriminator: string;
     avatar: string;
     bot: boolean;
     verified: boolean;
@@ -461,6 +532,7 @@ declare namespace Discord {
     constructor(options: {
       token: string,
       autorun?: boolean,
+      intents?: number,
       messageCacheLimit?: number,
       shard?: number[]
     })
@@ -524,6 +596,7 @@ declare namespace Discord {
     createInvite(options: createInviteOpts, callback: Function): void
     deleteInvite(inviteCode: string, callback?: callbackFunc): void
     queryInvite(inviteCode: string, callback: Function): void
+    auditLog(options: auditLogOpts, callback?: callbackFunc): void
 
     /**
      * CHANNELS
@@ -539,13 +612,13 @@ declare namespace Discord {
     pinMessage(options: pinMessageOpts, callback?: callbackFunc): void
     deletePinnedMessage(options: deletePinnedMessageOpts, callback?: callbackFunc): void
     getPinnedMessages(options: getPinnedMessagesOpts, callback?: callbackFunc): void
-    addReaction(options: reactionOpts, callback?: callbackFunc): void
+
     /**
      * VOICE CHANNELS
      */
     joinVoiceChannel(channelID: string, callback?: callbackFunc): void
     leaveVoiceChannel(channelID: string, callback?: callbackFunc): void
-    getAudioContext(channelID: string, callback: (error: string, stream: NodeJS.ReadableStream) => void): void
+    getAudioContext(channelID: string, callback: (error, stream) => void): void
 
     /**
      * USERS
